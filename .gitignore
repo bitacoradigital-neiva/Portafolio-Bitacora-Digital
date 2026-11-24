@@ -1,0 +1,12 @@
+# Carpetas de trabajo: no hacen falta para la página publicada
+produccion/
+.render-trabajo/
+.impeccable/
+assets/originales/
+
+# Archivos del sistema y del editor
+.DS_Store
+Thumbs.db
+.vscode/
+node_modules/
+.vercel/
