@@ -130,6 +130,11 @@
       var rc = claro.getBoundingClientRect();
       nav.classList.toggle("is-light", rc.top < 40 && rc.bottom > 40);
     }
+
+    // Barra compacta al bajar
+    if (nav) {
+      nav.classList.toggle("is-scrolled", y > 40);
+    }
   }
 
   window.addEventListener("scroll", function () {
@@ -141,6 +146,68 @@
 
   window.addEventListener("resize", alBajar);
   alBajar();
+
+
+  /* Barra: resaltado que se desliza a la sección activa
+     Sigue la sección en pantalla; al pasar el mouse por un enlace se
+     adelanta a ese enlace y al soltarlo vuelve a la sección activa.
+     ------------------------------------------------------- */
+  var enlaces = document.querySelector(".js-links");
+
+  if (enlaces) {
+    var pill = enlaces.querySelector(".nav__pill");
+    var links = Array.prototype.slice.call(enlaces.querySelectorAll("a"));
+    var activo = null;
+
+    var moverA = function (link) {
+      if (!link) {
+        enlaces.classList.remove("is-on");
+        return;
+      }
+      pill.style.setProperty("--x", link.offsetLeft + "px");
+      pill.style.setProperty("--w", link.offsetWidth + "px");
+      enlaces.classList.add("is-on");
+    };
+
+    var marcar = function (link) {
+      activo = link;
+      links.forEach(function (a) { a.classList.toggle("is-active", a === link); });
+      if (link) link.setAttribute("aria-current", "true");
+      links.forEach(function (a) { if (a !== link) a.removeAttribute("aria-current"); });
+      moverA(link);
+    };
+
+    links.forEach(function (a) {
+      a.addEventListener("mouseenter", function () { moverA(a); });
+      a.addEventListener("focus", function () { moverA(a); });
+      a.addEventListener("click", function () { marcar(a); });
+    });
+    enlaces.addEventListener("mouseleave", function () { moverA(activo); });
+
+    // Qué sección está en el centro de la pantalla
+    var secciones = links.map(function (a) { return document.querySelector(a.getAttribute("href")); });
+    var enVista = new Map();
+
+    var observadorBarra = new IntersectionObserver(function (entradas) {
+      entradas.forEach(function (e) { enVista.set(e.target, e.isIntersecting); });
+      var cual = null;
+      secciones.forEach(function (sec, i) { if (sec && enVista.get(sec)) cual = links[i]; });
+      if (cual !== activo) marcar(cual);
+    }, { rootMargin: "-45% 0px -50% 0px" });
+
+    secciones.forEach(function (sec) { if (sec) observadorBarra.observe(sec); });
+
+    // Si cambia el tamaño de la ventana, reacomoda el resaltado
+    window.addEventListener("resize", function () { moverA(activo); });
+
+    // Cuando la barra termina de compactarse, el resaltado se reacomoda
+    var barra = document.querySelector(".js-nav");
+    if (barra) {
+      barra.addEventListener("transitionend", function (e) {
+        if (e.target === barra && (e.propertyName === "width" || e.propertyName === "padding-left")) moverA(activo);
+      });
+    }
+  }
 
 
   /* Aparición al bajar
